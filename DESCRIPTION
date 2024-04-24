@@ -12,3 +12,5 @@ Description: This package contains general use functions for multivariate
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+URL: https://github.com/TravisCasey/FreedomEconomicIndexAnalysis
+BugReports: https://github.com/TravisCasey/FreedomEconomicIndexAnalysis/issues
