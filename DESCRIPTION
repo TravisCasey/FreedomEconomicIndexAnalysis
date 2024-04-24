@@ -1,0 +1,14 @@
+Package: FreedomEconomicIndexAnalysis
+Type: Package
+Title: Multivariate Analysis of the Freedom Economic Index Dataset
+Version: 0.1.0
+Author: Travis Casey
+Maintainer: Travis Casey <travis.w.casey@outlook.com>
+Description: This package contains general use functions for multivariate
+    statistical analysis including multivariate linear regression and factor
+    analysis, and assessment of these models. It also contains a shiny app
+    for viewing these models applied to the included Freedom Economic Index
+    dataset.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
