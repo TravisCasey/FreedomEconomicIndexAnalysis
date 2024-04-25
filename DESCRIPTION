@@ -12,8 +12,8 @@ Description: This package contains general use functions for multivariate
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/TravisCasey/FreedomEconomicIndexAnalysis
-BugReports: https://github.com/TravisCasey/FreedomEconomicIndexAnalysis/issues
+URL: https://github.com/TravisCasey/MATH5793Project3case0005
+BugReports: https://github.com/TravisCasey/MATH5793Project3case0005/issues
 Depends: 
     R (>= 2.10)
 RoxygenNote: 7.2.3
