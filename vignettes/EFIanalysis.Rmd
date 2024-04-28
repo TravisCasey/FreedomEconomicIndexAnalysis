@@ -1,0 +1,133 @@
+---
+title: "Economic Freedom Index Factor Analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Economic Freedom Index Factor Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(MATH5793Project3case0005)
+```
+
+
+## Introduction
+
+The purpose of this package is to perform factor analysis on the Economic Freedom Index dataset, as maintained by the Heritage Foundation. As a note, this is an analysis on the data itself with associated possible interpretations. Bias present in the data based on scoring and data-gathering methods, definition of variables, etc. are not addressed and should be kept in mind throughout this analysis.
+
+In particular, we seek to find some latent factors that explains the measure of economic freedom in just a few numbers.
+
+## Data
+
+The dataset is included in the package:
+
+```{r}
+head(freedom_index)
+```
+
+There is data on 176 countries, with each marked by their country name, the region, an overall score, and 12 variables on which the country's economic freedom is scored. The purpose of this analysis is that of discovering and assessing underlying latent factors. While the overall score does seek to reduce these variables down to a single number, it is simply an unweighted average of the scores. We hope to discover better representations of the latent factors.
+
+## Number of Factors
+
+A challenge with principal component or factor analysis is choosing the correct number of factors. There is no general method to choose this number. The first function exported by this R package compiles information, plots, and recommendations for finding this number. We apply it to the EFI dataset.
+
+```{r}
+factor_info <- factor.count(X = freedom_index[4:15], scale = FALSE)
+```
+
+Note that this function can instead be called with a variance-covariance matrix instead of the data by using the option S instead of X.
+
+This creates two plots, the first of which is a scree plot and the second is the cumulative sum of variance. The red vertical dashed line on the scree plot marks the automatically detected "elbow" in the figure, which can be a good indicator of how many components to keep. Here, it recommends 4 components. Viewing the cumulative sum plot, we can see that it takes some time to reach high cumulative amounts of variance. This indicates that we should expect the observed variables to have significant unique variances not explained by common factors. 
+
+The function also returns helpful information relating to the variances and the elbow found.
+
+```{r}
+factor_info
+```
+
+The elbow theta values are the angle at each point in the (square-adjusted) scree plot; the lowest such is taken to be the elbow.
+
+We can also call this function with standardized variables using the scale option:
+
+```{r}
+factor_info <- factor.count(X = freedom_index[4:15], scale = TRUE)
+```
+
+We can see that an extra green line has appeared in the scree plot. This line implements another rule of thumb, which is choosing only components that explain more than unit variance (when standardized). We see now that the automatically detected elbow is now at 3, while the previous rule of thumb recommends 2. However, it should be noted that this is somewhat arbitrary, and the third component has near unit variance. This can be seen in the exceeds.count output, which detects components that account for 1.1, 1.0, and 0.9 variance, respectively.
+
+```{r}
+factor_info
+```
+
+Using this data, I expect that four factors should be a good number for unscaled data, while three factors is a good number for scaled data. Note that each score is done on the same scale, so there is little a priori reason to use standardized variables. However, dimensionality reduction seems to be more effective on the standardized variables, so we perform analysis on standardized variables.
+
+## Elbow Detector
+
+An explanation of the automatically detected elbow of the scree plot is in order. It should be noted this is just an automatically used recommendation for the viewer to use as part of their decision, and does not claim to be the correct number of compoennts.
+
+Consider a scree plot. It is assumed that the scree plot has an aspect ratio of 1, so the data is first rescaled by $n / \lambda_1$, where $\lambda_1$ is the highest eigenvalue of the spectral decomposition. Then the elbow is found by calculating the angle in the scree plot at each point (except at the endpoints) and finding the minimum. Specifically, this is given by:
+\[
+\theta_i = \frac{3\pi}{2} - \tan^{-1}(-1 / \Delta y_{i+1}) - \tan^{-1}(-\Delta y_i),
+\]
+where $\Delta y_i$ is the difference $\lambda_{i+1} - \lambda_{i}$, scaled as discussed above.
+
+## Factor Analysis
+
+With this knowledge, we perform factor analysis on the dataset. This pacakage exposes the factor.analysis function, which acts a wrapper for the factanal function from the stats pacakge. It automatically handles scaling observed variables, and plots the results against the first two factors (presuming you use at least two factors). Factor rotation can also be specified to aid in interpretation of the factors.
+
+The mathematical model of the orthogonal factor analysis is:
+\[
+\mathbf{X} - \boldsymbol\mu = \mathbf{LF} + \boldsymbol\epsilon,
+\]
+where $\mathbf{F}$ are the factors found (of a specified number) and the loadings $\mathbf{L}$. The $\boldsymbol\epsilon$ term accounts for variance of the original data $\mathbf{X} - \boldsymbol\mu$ that cannot be explained by the factors.
+
+Rotations aid in interpreting the factors, by obtaining a new set of loadings given by:
+\[
+\hat{\mathbf{L}}^* = \hat{\mathbf{L}}\mathbf{T},
+\]
+where $\mathbf{T}$ is an orthogonal matrix. This does not change the covariance structure of the model, and can be chosen to have each set of loadings concentrate highly on some variables to aid interpretation. We take this approach here.
+
+
+```{r, fig.width=7}
+fa <- factor.analysis(freedom_index[4:15], factors = 3, rotation = "promax")
+```
+
+We see the 176 observations plotted against the two factors. We can also view them categorized by regions using the categories argument.
+
+```{r, fig.width=7}
+fa <- factor.analysis(freedom_index[4:15], factors = 3, categories = freedom_index[2],
+                      rotation = "promax")
+```
+
+This data is largely jumbled, but some initial visual interpretation is warranted. First, it seems that Sub-Saharan Africa scores particularly low on factor 1, and Europe scores highly on both factor 1 and factor 2 (though with some significant outliers).
+
+We can also see a significant outlier, scoring extremely low on each factor. This country turns out to be North Korea, rated last in economic freedom in this dataset.
+
+We can now view the loadings and interpret based on the original variables.
+
+```{r}
+fa
+```
+
+Consider the first factor. We see that it loads on 7 variables in a similar, positive way, similar to how the overall score in the dataset would. However, it is strongly correlated in the opposite way with two variables, representing tax burden and government spending. One interpretation of this is countries having greater economic freedom (as rated by this scale) tend to have more developed social programs and/or more involvement in the international stage (foreign affairs). Various outlets such as these for government spending (which less developed countries may not have) may correlate with a greater tax burden on its citizens.
+
+For instance, the United States has an overall score of 70.1 but a government spending score of 48.7; rising debt and heavy government spending are common topics of discourse in America.
+
+The second component is almost completely composed of a positive correlation with Investment and Financial freedom. This seems to indicate that these two variables go largely hand-in-hand, and are a general indicator of the country's commitment to an open market.
+
+While this is not a detailed and well-researched exposition on the economies of various countries, it does seem more apparent why Europe scores highly on these two factors compared to Sub-Saharan Africa.
+
+
+## Conclusion
+
+Using the functions exposed in this package helped with preparing, executing, interpreting, and evaluating a factor analysis performed on the EFI dataset. The interpretation of the first two factors does correlate with expectation of the dataset, and seems to present an improved overall metric compared to just an unweighted average. However, the observed variables do have significant unique variances, which indicates the measure of economic freedom (as defined by the Heritage Foundation) is not overly redundantly represented by their 12 factors. However, a significant amount can be explained in just three factors as shown above.
+
+This analysis can be viewed interactive in a shiny app by executing the `runEFIApp` function.

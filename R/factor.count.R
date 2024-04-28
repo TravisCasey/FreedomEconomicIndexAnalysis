@@ -1,10 +1,59 @@
+plot_scree <- function(scree.data, elbow, exceeds.count, scale) {
+  # Helper function for factor.count
+  # Also used in shiny application
+
+  # construct plot
+  n <- length(scree.data$components)
+  components <- NULL
+  variance <- NULL
+  scree.plot <- ggplot2::ggplot(scree.data, ggplot2::aes(components, variance)) +
+    ggplot2::geom_point(size = 1.5, color = "blue") +
+    ggplot2::geom_line() +
+    ggplot2::labs(title = "Scree Plot") +
+    ggplot2::theme(aspect.ratio = 1.0) +
+    ggplot2::scale_x_continuous(breaks = seq(from = 1, to = n, by = ceiling(n/8)))
+
+  # Mark elbow on scree plot
+  scree.plot <- scree.plot +
+    ggplot2::geom_vline(xintercept = elbow$elbow, linetype = 'dashed',
+                        color = 'red', size = 1.5,)
+
+  # Mark cutoff for those exceeding unit variance, if scale is TRUE
+  if (scale) {
+    scree.plot <- scree.plot +
+      ggplot2::geom_vline(xintercept = exceeds.count$unit,
+                          linetype = 'dashed', color = 'green', size = 1.5)
+  }
+
+  scree.plot
+}
+
+
+plot_sum <- function(sum.data) {
+  # Helper function for factor.count
+  # Also used in shiny application
+  n <- length(sum.data$components)
+
+  cum_sum <- NULL
+  components <- NULL
+  sum.plot <- ggplot2::ggplot(sum.data, ggplot2::aes(components, cum_sum)) +
+    ggplot2::geom_point(size=1.5, color="blue") +
+    ggplot2::geom_line() +
+    ggplot2::labs(title = "Cumulative Sum of Variance", y = "Cumulative Variance") +
+    ggplot2::theme(aspect.ratio = 1.0) +
+    ggplot2::scale_x_continuous(breaks = seq(from = 1, to = n, by = ceiling(n/8)))
+
+  sum.plot
+}
+
+
 #' Factor Count Analysis
 #'
 #' Plots a scree plot and cumulative sum of variance plot, and calculates
 #' quantities helpful to choosing the number of components and/or factor to
 #' use in a PCA or factor analysis.
 #'
-#' @param X A dataframe or matrix of quantitative data. Optional if S is
+#' @param X A dataframe of quantitative data. Optional if S is
 #' specified.
 #' @param S An optional variance-covariance matrix that supersedes X if not set
 #' to NULL.
@@ -25,13 +74,14 @@ factor.count <- function(X = NULL, S = NULL, scale = FALSE) {
   # Input Handling #
   ##################
 
-  # User can specify either a dataframe/matrix X or a variance-covariance matrix
+  # User can specify either a dataframe X or a variance-covariance matrix
   # S but not neither.
   if (is.null(X) & is.null(S)) {
     stop("Must specify either data X or covariance matrix S.")
   }
 
   # Only use data X if it is valid and S is NULL.
+  X <- as.data.frame(X)
   if (is.null(S) & all(sapply(X, is.numeric))) {
     if (nrow(X) < ncol(X)) {
       stop("X must contain at least any many observations as variables.")
@@ -102,26 +152,8 @@ factor.count <- function(X = NULL, S = NULL, scale = FALSE) {
 
   scree.data <- data.frame(components = seq(from = 1, to = n, by = 1),
                            variance = decomp$values)
-  components <- NULL
-  variance <- NULL
-  scree.plot <- ggplot2::ggplot(scree.data, ggplot2::aes(components, variance)) +
-    ggplot2::geom_point(size = 1.5, color = "blue") +
-    ggplot2::geom_line() +
-    ggplot2::labs(title = "Scree Plot") +
-    ggplot2::scale_x_continuous(breaks = seq(from = 1, to = n, by = ceiling(n/8)))
 
-  # Mark elbow on scree plot
-  scree.plot <- scree.plot +
-    ggplot2::geom_vline(xintercept = elbow$elbow, linetype = 'dashed',
-                        color = 'red', size = 1.5,)
-
-  # Mark cutoff for those exceeding unit variance, if scale is TRUE
-  if (scale) {
-    scree.plot <- scree.plot +
-      ggplot2::geom_vline(xintercept = exceeds.count$unit,
-                          linetype = 'dashed', color = 'green', size = 1.5)
-  }
-
+  scree.plot <- plot_scree(scree.data, elbow, exceeds.count, scale)
   plot(scree.plot)
 
   #######################
@@ -131,13 +163,7 @@ factor.count <- function(X = NULL, S = NULL, scale = FALSE) {
   sum.data <- data.frame(components = seq(from = 1, to = n, by = 1),
                          cum_sum = var.cumsum)
 
-  cum_sum <- NULL
-  sum.plot <- ggplot2::ggplot(sum.data, ggplot2::aes(components, cum_sum)) +
-    ggplot2::geom_point(size=1.5, color="blue") +
-    ggplot2::geom_line() +
-    ggplot2::labs(title = "Cumulative Sum of Variance", y = "Cumulative Variance") +
-    ggplot2::scale_x_continuous(breaks = seq(from = 1, to = n, by = ceiling(n/8)))
-
+  sum.plot <- plot_sum(sum.data)
   plot(sum.plot)
 
   ##########

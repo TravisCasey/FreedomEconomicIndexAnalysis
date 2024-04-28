@@ -7,7 +7,7 @@
 factor.count(X = NULL, S = NULL, scale = FALSE)
 }
 \arguments{
-\item{X}{A dataframe or matrix of quantitative data. Optional if S is
+\item{X}{A dataframe of quantitative data. Optional if S is
 specified.}
 
 \item{S}{An optional variance-covariance matrix that supersedes X if not set
